@@ -1,0 +1,5 @@
+{
+  "name": "Graded Reader GenAI",
+  "description": "An AI-powered English reading passage generator that creates stories based on specific vocabulary levels, highlighting target words and out-of-scope vocabulary.",
+  "requestFramePermissions": []
+}
