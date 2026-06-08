@@ -2,7 +2,7 @@ import { GeneratedStory } from '../types';
 
 // Ensure API configuration is available
 const apiKey = process.env.API_KEY || '';
-const apiBaseUrl = process.env.API_BASE_URL || 'https://api.openai.com';
+const apiBaseUrl = process.env.API_BASE_URL?.trim().replace(/\/$/, '') || 'https://api.openai.com';
 const modelId = process.env.MODEL_ID || 'gpt-4o-mini';
 
 export const generateStory = async (
