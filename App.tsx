@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { WORD_GROUPS as DEFAULT_WORD_GROUPS, SCHOOL_GROUPS } from './constants';
 import { AppState, GeneratedStory, WordGroup, VocabItem } from './types';
-import { generateStory } from './services/geminiService';
+import { generateStory } from './services/aiService';
 import StoryRenderer from './components/StoryRenderer';
 import VocabList from './components/VocabList';
 import ConfigView from './components/ConfigView';
