@@ -5,6 +5,7 @@ import { generateStory } from './services/aiService';
 import StoryRenderer from './components/StoryRenderer';
 import VocabList from './components/VocabList';
 import ConfigView from './components/ConfigView';
+import DownloadsView from './components/DownloadsView';
 
 // Declare globals for external scripts
 declare global {
@@ -15,7 +16,7 @@ declare global {
   }
 }
 
-type ViewState = 'home' | 'config';
+type ViewState = 'home' | 'config' | 'downloads';
 
 const REVIEW_LEVEL_ID = 999;
 
@@ -344,12 +345,23 @@ const App: React.FC = () => {
 
       setBatchProgress("Compressing files...");
       const content = await zip.generateAsync({ type: "blob" });
+      const filename = `graded_stories_level_${currentLevel}_batch.zip`;
+      
+      try {
+        await fetch('/api/save-download', {
+          method: 'POST',
+          headers: { 'x-filename': encodeURIComponent(filename) },
+          body: content
+        });
+      } catch (e) {
+        console.error("Failed to save to server", e);
+      }
       
       // Save Zip
       const url = window.URL.createObjectURL(content);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `graded_stories_level_${currentLevel}_batch.zip`;
+      a.download = filename;
       a.click();
       window.URL.revokeObjectURL(url);
 
@@ -416,20 +428,34 @@ const App: React.FC = () => {
     reader.readAsBinaryString(file);
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const element = resultsRef.current;
     if (!element || !story || !window.html2pdf) return;
 
-    const opt = {
-      margin:       [10, 10, 10, 10], // top, left, bottom, right in mm
-      filename:     `${story.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'graded_reader_story'}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
+    const filename = `${story.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'graded_reader_story'}.pdf`;
+    
+    try {
+      const blob = await getPdfBlob(element, filename);
+      
+      try {
+        await fetch('/api/save-download', {
+          method: 'POST',
+          headers: { 'x-filename': encodeURIComponent(filename) },
+          body: blob
+        });
+      } catch (e) {
+        console.error("Failed to save to server", e);
+      }
 
-    // Use html2pdf to generate and save
-    window.html2pdf().set(opt).from(element).save();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Download failed:", err);
+    }
   };
 
   const filteredTargetWords = story?.targetWordsUsed.filter(
@@ -466,6 +492,26 @@ const App: React.FC = () => {
     );
   }
 
+  if (view === 'downloads') {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
+        <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('home')}>
+              <div className="bg-brand-600 rounded-lg p-1.5 shadow-sm">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">Graded Reader GenAI</h1>
+            </div>
+          </div>
+        </header>
+        <DownloadsView onBack={() => setView('home')} />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 pb-20 font-sans">
       {/* Header */}
@@ -480,6 +526,15 @@ const App: React.FC = () => {
             <h1 className="text-xl font-bold tracking-tight text-slate-900">Graded Reader GenAI</h1>
           </div>
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setView('downloads')}
+              className="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"
+              title="View Downloads"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
             <button 
               onClick={() => setView('config')}
               className="p-2 text-slate-500 hover:text-brand-600 hover:bg-slate-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500"

@@ -83,7 +83,13 @@ export const generateStory = async (
     const content = data.choices[0]?.message?.content;
 
     if (content) {
-      return JSON.parse(content) as GeneratedStory;
+      let cleanContent = content;
+      const firstBrace = cleanContent.indexOf('{');
+      const lastBrace = cleanContent.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace >= firstBrace) {
+        cleanContent = cleanContent.substring(firstBrace, lastBrace + 1);
+      }
+      return JSON.parse(cleanContent) as GeneratedStory;
     }
     throw new Error("No content generated.");
   } catch (error) {
