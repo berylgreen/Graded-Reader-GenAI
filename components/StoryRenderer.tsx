@@ -10,13 +10,22 @@ interface StoryRendererProps {
 
 const StoryRenderer: React.FC<StoryRendererProps> = ({ content, knownWords, targetWords, outOfScopeWords }) => {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
-    return () => {
-      if ('speechSynthesis' in window) {
+    if ('speechSynthesis' in window) {
+      const updateVoices = () => {
+        setVoices(window.speechSynthesis.getVoices());
+      };
+      
+      updateVoices();
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+
+      return () => {
         window.speechSynthesis.cancel();
-      }
-    };
+        window.speechSynthesis.onvoiceschanged = null;
+      };
+    }
   }, []);
 
   const handleTTS = () => {
@@ -28,6 +37,24 @@ const StoryRenderer: React.FC<StoryRendererProps> = ({ content, knownWords, targ
         const utterance = new SpeechSynthesisUtterance(content);
         utterance.rate = 0.9;
         utterance.onend = () => setIsPlaying(false);
+        
+        // Priority list for the most natural sounding English voices available natively
+        if (voices.length > 0) {
+          const bestVoice = 
+            voices.find(v => v.name.includes('Microsoft') && v.name.includes('Online') && v.lang.startsWith('en')) ||
+            voices.find(v => v.name.includes('Google US English')) ||
+            voices.find(v => v.name.includes('Google UK English')) ||
+            voices.find(v => v.name.includes('Siri') && v.lang.startsWith('en')) ||
+            voices.find(v => v.name.includes('Samantha') && v.lang.startsWith('en')) ||
+            voices.find(v => v.lang === 'en-US') ||
+            voices.find(v => v.lang.startsWith('en'));
+
+          if (bestVoice) {
+            utterance.voice = bestVoice;
+            console.log("Using TTS Voice:", bestVoice.name);
+          }
+        }
+
         window.speechSynthesis.speak(utterance);
         setIsPlaying(true);
       }
