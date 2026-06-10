@@ -11,12 +11,19 @@ export interface VocabItem {
   count?: number; // Usage frequency
 }
 
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  answer: string;
+}
+
 export interface GeneratedStory {
   title: string;
-  content: string; // Contains special markers for highlighting
+  content: string;
   translation: string;
   targetWordsUsed: VocabItem[]; // Words from the current level found in the story
   outOfScopeWords: VocabItem[]; // Words not in current or previous levels
+  quiz: QuizQuestion[];
 }
 
 export enum AppState {

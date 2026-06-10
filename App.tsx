@@ -3,6 +3,7 @@ import { WORD_GROUPS as DEFAULT_WORD_GROUPS, SCHOOL_GROUPS } from './constants';
 import { AppState, GeneratedStory, WordGroup, VocabItem } from './types';
 import { generateStory } from './services/aiService';
 import StoryRenderer from './components/StoryRenderer';
+import QuizViewer from './components/QuizViewer';
 import VocabList from './components/VocabList';
 import ConfigView from './components/ConfigView';
 import DownloadsView from './components/DownloadsView';
@@ -796,7 +797,15 @@ const App: React.FC = () => {
                 </div>
                 
                 <div className="px-8 py-8">
-                   <StoryRenderer content={story.content} knownWords={knownWordsSet} />
+                   <StoryRenderer 
+                     content={story.content} 
+                     knownWords={knownWordsSet} 
+                     targetWords={story.targetWordsUsed} 
+                     outOfScopeWords={story.outOfScopeWords} 
+                   />
+                </div>
+                <div className="px-8 pb-8">
+                  <QuizViewer quiz={story.quiz} />
                 </div>
                 
                 {/* Translation Accordion */}
