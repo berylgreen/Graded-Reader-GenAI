@@ -568,11 +568,9 @@ const App: React.FC = () => {
         
         {/* Intro */}
         <div className="text-center mb-10">
-          <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl mb-4">
-            Custom English Stories
-          </h2>
+
           <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Select a vocabulary level below, then click Generate. The AI will write a story prioritizing that level's words.
+            请在下方选择词汇等级，然后点击生成。AI将优先使用该等级的单词来编写故事。
           </p>
         </div>
 
@@ -589,10 +587,10 @@ const App: React.FC = () => {
                 <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Known Words (Exclude from list)</span>
+                <span>已知单词（从列表中排除）</span>
                 {knownWordsSet.size > 0 && (
                   <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {knownWordsSet.size} active
+                    {knownWordsSet.size} 个已知
                   </span>
                 )}
               </div>
@@ -607,7 +605,7 @@ const App: React.FC = () => {
             {showSettings && (
               <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 space-y-4 animate-fadeIn">
                 <p className="text-sm text-slate-600 mb-2">
-                  Words added here will be excluded from the "Target Words" and "Out of Scope" lists.
+                  在此添加的单词将从“目标单词”和“超纲单词”列表中排除。
                 </p>
                 
                 {/* Import Buttons Row */}
@@ -620,10 +618,10 @@ const App: React.FC = () => {
                         className="appearance-none bg-white border border-slate-300 text-slate-700 py-1.5 px-3 pr-8 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer hover:border-brand-300"
                         defaultValue=""
                       >
-                        <option value="" disabled>Import from School Grade...</option>
+                        <option value="" disabled>按学段导入...</option>
                         {SCHOOL_GROUPS.map(group => (
                           <option key={group.level} value={group.level}>
-                            Completed {group.label}
+                            已完成 {group.label}
                           </option>
                         ))}
                       </select>
@@ -637,7 +635,7 @@ const App: React.FC = () => {
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      Import from Excel (Col 1)
+                      从Excel导入 (第1列)
                       <input 
                         type="file" 
                         ref={fileInputRef}
@@ -653,12 +651,12 @@ const App: React.FC = () => {
                   <textarea 
                     value={manualKnownWords}
                     onChange={(e) => setManualKnownWords(e.target.value)}
-                    placeholder="e.g. apple, banana, cat, house"
+                    placeholder="例如: apple, banana, cat, house"
                     className="w-full rounded-md border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 sm:text-sm p-3 border"
                     rows={6}
                   />
                   <p className="text-xs text-slate-400 mt-1">
-                    Tip: Selecting a grade above adds all words from that grade AND previous grades to this list.
+                    提示：选择上面的学段会将该学段及之前所有学段的单词添加到此列表中。
                   </p>
                 </div>
               </div>
@@ -668,7 +666,7 @@ const App: React.FC = () => {
           {/* Controls Box */}
           <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-100">
               <label htmlFor="level-select" className="block text-sm font-semibold text-slate-700 mb-2 uppercase tracking-wide">
-                Select Level
+                选择等级
               </label>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-grow">
@@ -679,7 +677,7 @@ const App: React.FC = () => {
                     onChange={handleDropdownChange}
                     disabled={appState === AppState.GENERATING || isBatchGenerating}
                   >
-                    <option value="" disabled>Choose a Vocabulary Level...</option>
+                    <option value="" disabled>请选择词汇等级...</option>
                     {vocabGroups.map((group) => {
                       if (group.level === REVIEW_LEVEL_ID && group.words.length === 0) return null;
                       
@@ -715,11 +713,11 @@ const App: React.FC = () => {
                     {appState === AppState.GENERATING && !isBatchGenerating ? (
                       <div className="flex items-center">
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        <span>Writing...</span>
+                        <span>正在生成...</span>
                       </div>
                     ) : (
                       <>
-                        <span>Generate</span>
+                        <span>生成</span>
                         <svg className="w-5 h-5 ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
@@ -755,7 +753,7 @@ const App: React.FC = () => {
               </div>
               
               {!currentLevel && (
-                <p className="mt-2 text-sm text-slate-400">Please select a level to start.</p>
+                <p className="mt-2 text-sm text-slate-400">请选择一个等级以开始。</p>
               )}
               {isBatchGenerating && (
                  <p className="mt-2 text-xs font-semibold text-brand-600 animate-pulse">{batchProgress}</p>
@@ -813,24 +811,6 @@ const App: React.FC = () => {
                     </summary>
                     <div className="mt-6 pl-7">
                       <QuizViewer quiz={story.quiz} />
-                    </div>
-                  </details>
-                </div>
-                
-                {/* Translation Accordion */}
-                <div className="px-8 py-6 bg-slate-50 border-t border-slate-100">
-                  <details className="group">
-                    <summary className="flex justify-between items-center font-medium cursor-pointer list-none text-slate-600 hover:text-brand-600 transition-colors">
-                      <span className="flex items-center">
-                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
-                        Chinese Translation
-                      </span>
-                      <span className="transition-transform group-open:rotate-180">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                      </span>
-                    </summary>
-                    <div className="text-slate-600 mt-4 leading-relaxed whitespace-pre-wrap pl-7">
-                      {story.translation}
                     </div>
                   </details>
                 </div>

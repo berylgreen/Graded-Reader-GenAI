@@ -17,7 +17,6 @@ const VocabItemSchema = z.object({
 const GeneratedStorySchema = z.object({
   title: z.string(),
   content: z.string(),
-  translation: z.string(),
   targetWordsUsed: z.array(VocabItemSchema),
   outOfScopeWords: z.array(VocabItemSchema),
   quiz: z.array(QuizQuestionSchema),
@@ -82,7 +81,6 @@ export const generateStory = async (
   {
     "title": "A creative title",
     "content": "The story content in pure natural text...",
-    "translation": "Natural Chinese translation...",
     "targetWordsUsed": [
       { "word": "example", "meaning": "例子", "pronunciation": "/ɪɡˈzæmpəl/" }
     ],
