@@ -28,6 +28,10 @@ const apiKey = process.env.API_KEY || '';
 const apiBaseUrl = process.env.API_BASE_URL?.trim().replace(/\/$/, '') || 'https://api.openai.com';
 const modelId = process.env.MODEL_ID || 'gpt-4o-mini';
 
+// TTS API configuration (fallbacks to main API config if not specified)
+const ttsApiKey = process.env.TTS_API_KEY || apiKey;
+const ttsApiBaseUrl = process.env.TTS_API_BASE_URL?.trim().replace(/\/$/, '') || 'https://api.openai.com';
+
 export const generateStory = async (
   currentLevel: number,
   allowedWords: string[],
@@ -149,6 +153,37 @@ export const generateStory = async (
     throw new Error("No content generated.");
   } catch (error) {
     console.error("AI API Error:", error);
+    throw error;
+  }
+};
+
+export const generateSpeech = async (text: string): Promise<Blob> => {
+  if (!ttsApiKey) {
+    throw new Error("TTS API Key is missing. Please check your environment configuration.");
+  }
+  
+  try {
+    const response = await fetch(`${ttsApiBaseUrl}/v1/audio/speech`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ttsApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'tts-1',
+        input: text,
+        voice: 'nova',
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`TTS API Request failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    return await response.blob();
+  } catch (error) {
+    console.error("TTS API Error:", error);
     throw error;
   }
 };
