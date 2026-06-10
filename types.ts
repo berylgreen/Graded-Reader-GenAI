@@ -20,6 +20,7 @@ export interface QuizQuestion {
 export interface GeneratedStory {
   title: string;
   content: string;
+  translation: string;
   targetWordsUsed: VocabItem[]; // Words from the current level found in the story
   outOfScopeWords: VocabItem[]; // Words not in current or previous levels
   quiz: QuizQuestion[];

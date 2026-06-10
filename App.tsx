@@ -697,13 +697,13 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-shrink-0">
                   <button
                     onClick={handleGenerate}
                     disabled={!currentLevel || appState === AppState.GENERATING || isBatchGenerating}
                     className={`
                       px-6 py-3 rounded-xl font-bold text-white shadow-md transition-all duration-200
-                      flex items-center justify-center min-w-[120px] flex-grow
+                      flex items-center justify-center min-w-[140px] whitespace-nowrap
                       ${!currentLevel || appState === AppState.GENERATING || isBatchGenerating
                         ? 'bg-slate-300 cursor-not-allowed transform-none' 
                         : 'bg-brand-600 hover:bg-brand-700 hover:shadow-lg active:scale-95 active:shadow-sm'
@@ -711,14 +711,14 @@ const App: React.FC = () => {
                     `}
                   >
                     {appState === AppState.GENERATING && !isBatchGenerating ? (
-                      <div className="flex items-center">
+                      <div className="flex items-center whitespace-nowrap">
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
                         <span>正在生成...</span>
                       </div>
                     ) : (
                       <>
-                        <span>生成</span>
-                        <svg className="w-5 h-5 ml-2 -mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <span className="whitespace-nowrap">生成</span>
+                        <svg className="w-5 h-5 ml-2 -mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
                       </>
@@ -814,6 +814,26 @@ const App: React.FC = () => {
                     </div>
                   </details>
                 </div>
+
+                {/* Translation Accordion */}
+                {story.translation && (
+                  <div className="px-8 py-6 bg-slate-50 border-t border-slate-100">
+                    <details className="group">
+                      <summary className="flex justify-between items-center font-medium cursor-pointer list-none text-slate-600 hover:text-brand-600 transition-colors">
+                        <span className="flex items-center">
+                          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
+                          Chinese Translation
+                        </span>
+                        <span className="transition-transform group-open:rotate-180">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </span>
+                      </summary>
+                      <div className="text-slate-600 mt-4 leading-relaxed whitespace-pre-wrap pl-7">
+                        {story.translation}
+                      </div>
+                    </details>
+                  </div>
+                )}
               </div>
             </div>
 
