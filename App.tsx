@@ -533,6 +533,20 @@ const App: React.FC = () => {
               title="View Downloads"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </button>
+            <button 
+              onClick={handleDownloadPDF}
+              disabled={!story || appState !== AppState.SUCCESS}
+              className={`p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+                !story || appState !== AppState.SUCCESS 
+                  ? 'text-slate-300 cursor-not-allowed' 
+                  : 'text-slate-500 hover:text-brand-600 hover:bg-slate-100'
+              }`}
+              title="Download PDF"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
             </button>
@@ -775,37 +789,32 @@ const App: React.FC = () => {
             {/* Main Story Column */}
             <div className="lg:col-span-8 space-y-8">
               <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
-                <div className="bg-brand-50 px-8 py-6 border-b border-brand-100 flex justify-between items-center">
-                  <div>
-                    <div className="uppercase tracking-wide text-xs font-bold text-brand-600 mb-1">
-                      {currentLevel === REVIEW_LEVEL_ID ? 'Review Level' : `Level ${currentLevel}`}
-                    </div>
-                    <h3 className="text-2xl font-bold text-slate-900">{story.title}</h3>
-                  </div>
-                  
-                  {/* Download PDF Button */}
-                  <button
-                    onClick={handleDownloadPDF}
-                    data-html2canvas-ignore
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-brand-200 text-brand-700 rounded-lg text-sm font-semibold hover:bg-brand-50 hover:border-brand-300 transition-all shadow-sm"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    Download PDF
-                  </button>
-                </div>
-                
                 <div className="px-8 py-8">
                    <StoryRenderer 
+                     title={story.title}
+                     level={currentLevel === REVIEW_LEVEL_ID ? 'Review Level' : `Level ${currentLevel}`}
                      content={story.content} 
                      knownWords={knownWordsSet} 
                      targetWords={story.targetWordsUsed} 
                      outOfScopeWords={story.outOfScopeWords} 
                    />
                 </div>
-                <div className="px-8 pb-8">
-                  <QuizViewer quiz={story.quiz} />
+                {/* Quiz Accordion */}
+                <div className="px-8 py-6 border-t border-slate-100">
+                  <details className="group">
+                    <summary className="flex justify-between items-center font-medium cursor-pointer list-none text-slate-600 hover:text-brand-600 transition-colors">
+                      <span className="flex items-center">
+                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Reading Comprehension Exercises
+                      </span>
+                      <span className="transition-transform group-open:rotate-180">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                      </span>
+                    </summary>
+                    <div className="mt-6 pl-7">
+                      <QuizViewer quiz={story.quiz} />
+                    </div>
+                  </details>
                 </div>
                 
                 {/* Translation Accordion */}

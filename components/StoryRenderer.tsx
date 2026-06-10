@@ -3,13 +3,15 @@ import { VocabItem } from '../types';
 import { generateSpeech } from '../services/aiService';
 
 interface StoryRendererProps {
+  title?: string;
+  level?: string;
   content: string;
   knownWords: Set<string>;
   targetWords: VocabItem[];
   outOfScopeWords: VocabItem[];
 }
 
-const StoryRenderer: React.FC<StoryRendererProps> = ({ content, knownWords, targetWords, outOfScopeWords }) => {
+const StoryRenderer: React.FC<StoryRendererProps> = ({ title, level, content, knownWords, targetWords, outOfScopeWords }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [useAITTS, setUseAITTS] = useState(false);
@@ -149,58 +151,108 @@ const StoryRenderer: React.FC<StoryRendererProps> = ({ content, knownWords, targ
   return (
     <div className="relative">
       <audio ref={audioRef} onEnded={() => setIsPlaying(false)} className="hidden" />
-      <div className="flex justify-end items-center gap-4 mb-2">
-        <label className="flex items-center gap-2 cursor-pointer p-2 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200 select-none">
-          <input 
-            type="checkbox" 
-            checked={useAITTS} 
-            onChange={(e) => {
-              setUseAITTS(e.target.checked);
-              // Stop current audio when switching modes
-              if (isPlaying || isLoadingTTS) {
-                if (audioRef.current) {
-                  audioRef.current.pause();
-                  audioRef.current.currentTime = 0;
-                }
-                if ('speechSynthesis' in window) {
-                  window.speechSynthesis.cancel();
-                }
-                setIsPlaying(false);
-                setIsLoadingTTS(false);
-              }
-            }}
-            className="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer"
-          />
-          <span className="text-sm font-medium text-slate-700">Use AI Voice 🤖</span>
-        </label>
-        
-        <button 
-          onClick={handleTTS}
-          disabled={isLoadingTTS}
-          className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm ${
-            isPlaying || isLoadingTTS
-              ? 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 disabled:opacity-70 disabled:cursor-wait' 
-              : 'bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100'
-          }`}
-        >
-          {isLoadingTTS ? (
-             <>
-               <div className="w-4 h-4 border-2 border-red-200 border-t-red-600 rounded-full animate-spin"></div>
-               Loading Voice...
-             </>
-          ) : isPlaying ? (
-            <>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" /></svg>
-              Stop Reading
-            </>
-          ) : (
-            <>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M17.657 6.343a8 8 0 010 11.314M11 5L6 9H2v6h4l5 4V5z" /></svg>
-              Read Aloud
-            </>
-          )}
-        </button>
-      </div>
+      {title && level ? (
+        <div className="bg-brand-50 px-8 py-6 border-b border-brand-100 flex justify-between items-center -mx-8 -mt-8 mb-8" data-html2canvas-ignore>
+          <div>
+            <div className="uppercase tracking-wide text-xs font-bold text-brand-600 mb-1">
+              {level}
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900">{title}</h3>
+          </div>
+          
+          <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-full border border-brand-200 shadow-sm">
+             <label className="flex items-center gap-1.5 cursor-pointer select-none border-r border-slate-200 pr-3 hover:opacity-80 transition-opacity">
+               <span className="text-xs font-semibold text-slate-600">AI</span>
+               <input 
+                 type="checkbox" 
+                 checked={useAITTS} 
+                 onChange={(e) => {
+                   setUseAITTS(e.target.checked);
+                   if (isPlaying || isLoadingTTS) {
+                     if (audioRef.current) {
+                       audioRef.current.pause();
+                       audioRef.current.currentTime = 0;
+                     }
+                     if ('speechSynthesis' in window) {
+                       window.speechSynthesis.cancel();
+                     }
+                     setIsPlaying(false);
+                     setIsLoadingTTS(false);
+                   }
+                 }}
+                 className="w-3.5 h-3.5 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer"
+               />
+             </label>
+             
+             <button 
+               onClick={handleTTS}
+               disabled={isLoadingTTS}
+               className="flex items-center gap-1 text-brand-700 hover:text-brand-800 transition-colors disabled:opacity-50"
+             >
+                {isLoadingTTS ? (
+                   <div className="w-4 h-4 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+                ) : isPlaying ? (
+                  <>
+                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" /></svg>
+                    <span className="text-xs font-bold text-red-600">Stop</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+                    <span className="text-xs font-bold">Read</span>
+                  </>
+                )}
+             </button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end items-center mb-4" data-html2canvas-ignore>
+          <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-full border border-brand-200 shadow-sm">
+             <label className="flex items-center gap-1.5 cursor-pointer select-none border-r border-slate-200 pr-3 hover:opacity-80 transition-opacity">
+               <span className="text-xs font-semibold text-slate-600">AI</span>
+               <input 
+                 type="checkbox" 
+                 checked={useAITTS} 
+                 onChange={(e) => {
+                   setUseAITTS(e.target.checked);
+                   if (isPlaying || isLoadingTTS) {
+                     if (audioRef.current) {
+                       audioRef.current.pause();
+                       audioRef.current.currentTime = 0;
+                     }
+                     if ('speechSynthesis' in window) {
+                       window.speechSynthesis.cancel();
+                     }
+                     setIsPlaying(false);
+                     setIsLoadingTTS(false);
+                   }
+                 }}
+                 className="w-3.5 h-3.5 text-brand-600 rounded border-slate-300 focus:ring-brand-500 cursor-pointer"
+               />
+             </label>
+             
+             <button 
+               onClick={handleTTS}
+               disabled={isLoadingTTS}
+               className="flex items-center gap-1 text-brand-700 hover:text-brand-800 transition-colors disabled:opacity-50"
+             >
+                {isLoadingTTS ? (
+                   <div className="w-4 h-4 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+                ) : isPlaying ? (
+                  <>
+                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" /></svg>
+                    <span className="text-xs font-bold text-red-600">Stop</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" /></svg>
+                    <span className="text-xs font-bold">Read</span>
+                  </>
+                )}
+             </button>
+          </div>
+        </div>
+      )}
       {renderContent()}
     </div>
   );
