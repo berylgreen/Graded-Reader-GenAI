@@ -7,11 +7,18 @@ const QuizQuestionSchema = z.object({
   answer: z.string(),
 });
 
+const MorphemePartSchema = z.object({
+  part: z.string(),
+  meaning: z.string()
+});
+
 const VocabItemSchema = z.object({
   word: z.string(),
   meaning: z.string(),
   pronunciation: z.string(),
   count: z.number().optional(),
+  rootWord: z.string().optional(),
+  morphemeBreakdown: z.array(MorphemePartSchema).optional(),
 });
 
 const GeneratedStorySchema = z.object({
@@ -75,6 +82,7 @@ export const generateStory = async (
     - The base word itself.
     - The IPA pronunciation.
     - The Chinese meaning specifically appropriate for how the word is used in this story (contextual meaning).
+    - If the word has clear etymological roots/affixes (e.g. unbelievable), provide a 'morphemeBreakdown' array analyzing its parts and their meanings in Chinese. Do this for both target and out-of-scope words if applicable.
   - Generate 2 to 3 multiple-choice reading comprehension questions based on the story.
 
   JSON OUTPUT RULES:
@@ -84,7 +92,16 @@ export const generateStory = async (
     "content": "The story content in pure natural text...",
     "translation": "Natural Chinese translation...",
     "targetWordsUsed": [
-      { "word": "example", "meaning": "例子", "pronunciation": "/ɪɡˈzæmpəl/" }
+      { 
+        "word": "unbelievable", 
+        "meaning": "难以置信的", 
+        "pronunciation": "/ˌʌnbɪˈliːvəbl/",
+        "morphemeBreakdown": [
+          { "part": "un-", "meaning": "否定" },
+          { "part": "believe", "meaning": "相信" },
+          { "part": "-able", "meaning": "可以...的" }
+        ]
+      }
     ],
     "outOfScopeWords": [
       { "word": "example", "meaning": "例子", "pronunciation": "/ɪɡˈzæmpəl/" }

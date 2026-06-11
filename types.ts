@@ -4,12 +4,18 @@ export interface WordGroup {
   words: string[];
 }
 
+export interface MorphemePart {
+  part: string;
+  meaning: string;
+}
+
 export interface VocabItem {
   word: string;
   meaning: string;
   pronunciation: string;
   count?: number; // Usage frequency
   rootWord?: string; // Optional root word for lemmatization
+  morphemeBreakdown?: MorphemePart[]; // Optional root/affix breakdown
 }
 
 export interface QuizQuestion {

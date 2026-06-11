@@ -40,6 +40,21 @@ const VocabList: React.FC<VocabListProps> = ({ items, type, title }) => {
                   <span className="text-slate-600">
                     {item.meaning}
                   </span>
+
+                  {item.morphemeBreakdown && item.morphemeBreakdown.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+                      <span className="text-green-500">↳</span>
+                      {item.morphemeBreakdown.map((mp, idx) => (
+                        <React.Fragment key={idx}>
+                          {idx > 0 && <span className="text-green-300">+</span>}
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-green-50 border border-green-200 text-green-700">
+                            <span className="font-mono font-medium mr-1">{mp.part}</span>
+                            <span className="text-green-600/80">({mp.meaning})</span>
+                          </span>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 {item.count !== undefined && item.count > 0 && (
                   <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600" title={`Used ${item.count} times previously`}>
