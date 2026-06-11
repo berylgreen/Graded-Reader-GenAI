@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WordGroup } from '../types';
-import { WORD_GROUPS as DEFAULT_GROUPS } from '../constants';
+import { FRY_WORD_GROUPS as DEFAULT_GROUPS } from '../constants';
 
 interface ConfigViewProps {
   groups: WordGroup[];

@@ -9,6 +9,7 @@ export interface VocabItem {
   meaning: string;
   pronunciation: string;
   count?: number; // Usage frequency
+  rootWord?: string; // Optional root word for lemmatization
 }
 
 export interface QuizQuestion {

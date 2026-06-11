@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { WORD_GROUPS as DEFAULT_WORD_GROUPS, SCHOOL_GROUPS } from './constants';
+import { FRY_WORD_GROUPS, SCHOOL_GROUPS } from './constants';
+import { NGSL_WORD_GROUPS, NGSL_FAMILIES, NGSL_HEADWORD_VARIANTS } from './ngsl_data';
 import { AppState, GeneratedStory, WordGroup, VocabItem } from './types';
 import { generateStory } from './services/aiService';
 import StoryRenderer from './components/StoryRenderer';
@@ -33,10 +34,10 @@ const App: React.FC = () => {
         return JSON.parse(saved);
       } catch (e) {
         console.error("Failed to parse saved vocab groups", e);
-        return DEFAULT_WORD_GROUPS;
+        return vocabSystem === 'ngsl' ? NGSL_WORD_GROUPS : FRY_WORD_GROUPS;
       }
     }
-    return DEFAULT_WORD_GROUPS;
+    return vocabSystem === 'ngsl' ? NGSL_WORD_GROUPS : FRY_WORD_GROUPS;
   });
 
   // Word Usage Statistics State
@@ -55,6 +56,10 @@ const App: React.FC = () => {
 
   // Known Words State (Moved up for dependency access)
   const [showSettings, setShowSettings] = useState(false);
+    const [vocabSystem, setVocabSystem] = useState<'fry' | 'ngsl'>(() => {
+    return (localStorage.getItem('gradedReader_vocabSystem') as 'fry' | 'ngsl') || 'fry';
+  });
+
   const [manualKnownWords, setManualKnownWords] = useState<string>('');
   
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -66,12 +71,17 @@ const App: React.FC = () => {
     
     // Process manual input (which now includes Excel imports)
     manualKnownWords.split(/[,，\n]/).forEach(word => {
-      const clean = word.trim().toLowerCase();
-      if (clean) set.add(clean);
+      let clean = word.trim().toLowerCase();
+      if (clean) {
+        if (vocabSystem === 'ngsl') {
+          clean = NGSL_FAMILIES[clean] || clean;
+        }
+        set.add(clean);
+      }
     });
 
     return set;
-  }, [manualKnownWords]);
+  }, [manualKnownWords, vocabSystem]);
 
   // Persist vocab groups when changed
   useEffect(() => {
@@ -150,6 +160,15 @@ const App: React.FC = () => {
       });
       return newStats;
     });
+  };
+
+  const handleToggleVocabSystem = (system: 'fry' | 'ngsl') => {
+    if (system === vocabSystem) return;
+    setVocabSystem(system);
+    localStorage.setItem('gradedReader_vocabSystem', system);
+    setCurrentLevel(null);
+    const newBase = system === 'fry' ? FRY_WORD_GROUPS : NGSL_WORD_GROUPS;
+    setVocabGroups(newBase);
   };
 
   const handleResetStats = () => {
@@ -466,12 +485,20 @@ const App: React.FC = () => {
     }
   };
 
-  const filteredTargetWords = story?.targetWordsUsed.filter(
-    item => !knownWordsSet.has(item.word.toLowerCase())
+  const filteredTargetWords = story?.targetWordsUsed.map(item => {
+    const w = item.word.toLowerCase();
+    const lemma = vocabSystem === 'ngsl' ? (NGSL_FAMILIES[w] || w) : w;
+    return { ...item, rootWord: lemma !== w ? lemma : undefined };
+  }).filter(
+    item => !knownWordsSet.has((item.rootWord || item.word).toLowerCase())
   ) || [];
 
-  const filteredOutOfScopeWords = story?.outOfScopeWords.filter(
-    item => !knownWordsSet.has(item.word.toLowerCase())
+  const filteredOutOfScopeWords = story?.outOfScopeWords.map(item => {
+    const w = item.word.toLowerCase();
+    const lemma = vocabSystem === 'ngsl' ? (NGSL_FAMILIES[w] || w) : w;
+    return { ...item, rootWord: lemma !== w ? lemma : undefined };
+  }).filter(
+    item => !knownWordsSet.has((item.rootWord || item.word).toLowerCase())
   ) || [];
 
   if (view === 'config') {
@@ -584,6 +611,34 @@ const App: React.FC = () => {
         {/* Configuration Section */}
         <div className="max-w-2xl mx-auto mb-12 space-y-4">
           
+          
+              {/* Vocab System Toggle */}
+              <div className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <span className="text-sm font-semibold text-slate-700">词汇体系:</span>
+                <div className="flex bg-slate-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => handleToggleVocabSystem('fry')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      vocabSystem === 'fry' 
+                        ? 'bg-white text-brand-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    Fry 视觉词 (1000)
+                  </button>
+                  <button
+                    onClick={() => handleToggleVocabSystem('ngsl')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      vocabSystem === 'ngsl' 
+                        ? 'bg-white text-brand-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    NGSL 高频词 (2800)
+                  </button>
+                </div>
+              </div>
+
           {/* Settings Toggle */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
             <button 
@@ -815,6 +870,53 @@ const App: React.FC = () => {
                      outOfScopeWords={story.outOfScopeWords} 
                    />
                 </div>
+                                {/* NGSL Word Families Accordion */}
+                {(() => {
+                  const uniqueRoots = new Set<string>();
+                  const allWords = [...(filteredTargetWords || []), ...(filteredOutOfScopeWords || [])];
+                  
+                  allWords.forEach(item => {
+                    uniqueRoots.add((item.rootWord || item.word).toLowerCase());
+                  });
+
+                  const familiesToRender = Array.from(uniqueRoots)
+                    .filter(root => NGSL_HEADWORD_VARIANTS[root] && NGSL_HEADWORD_VARIANTS[root].length > 0)
+                    .sort();
+
+                  if (familiesToRender.length === 0) return null;
+
+                  return (
+                    <div className="px-8 py-6 border-t border-slate-100 bg-white">
+                      <details className="group">
+                        <summary className="flex justify-between items-center font-medium cursor-pointer list-none text-slate-600 hover:text-brand-600 transition-colors">
+                          <span className="flex items-center">
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            NGSL Word Families
+                          </span>
+                          <span className="transition-transform group-open:rotate-180">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                          </span>
+                        </summary>
+                        <div className="mt-4 pl-7 text-sm text-slate-600 space-y-2">
+                          <p className="text-xs text-slate-400 mb-2">以下是文章中使用过的单词所在的NGSL词族（变体）。了解这些变体有助于您扩展词汇量：</p>
+                          {familiesToRender.map(root => (
+                            <div key={root} className="flex flex-wrap gap-2 items-center border-b border-slate-50 pb-2 last:border-0">
+                              <span className="font-bold text-slate-800">{root}:</span>
+                              {NGSL_HEADWORD_VARIANTS[root].map(variant => (
+                                <span key={variant} className="bg-slate-100 px-2 py-0.5 rounded text-xs">
+                                  {variant}
+                                </span>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    </div>
+                  );
+                })()}
+
                 {/* Quiz Accordion */}
                 <div className="px-8 py-6 border-t border-slate-100">
                   <details className="group">

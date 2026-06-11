@@ -29,6 +29,11 @@ const VocabList: React.FC<VocabListProps> = ({ items, type, title }) => {
                   <span className={`font-bold mr-2 ${wordColor}`}>
                     {item.word}
                   </span>
+                  {item.rootWord && item.rootWord.toLowerCase() !== item.word.toLowerCase() && (
+                    <span className="text-xs text-slate-400 italic mr-2">
+                      (variant of <span className="font-semibold">{item.rootWord}</span>)
+                    </span>
+                  )}
                   <span className="font-mono text-xs text-slate-500 mr-2 bg-slate-100 px-1.5 py-0.5 rounded inline-block">
                     {item.pronunciation}
                   </span>
