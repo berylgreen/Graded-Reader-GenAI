@@ -42,7 +42,8 @@ const ttsApiBaseUrl = process.env.TTS_API_BASE_URL?.trim().replace(/\/$/, '') ||
 export const generateStory = async (
   currentLevel: number,
   allowedWords: string[],
-  targetWords: string[]
+  targetWords: string[],
+  contentType: 'fiction' | 'non-fiction' = 'fiction'
 ): Promise<GeneratedStory> => {
   if (!apiKey) {
     throw new Error("API Key is missing. Please check your environment configuration.");
@@ -59,8 +60,12 @@ export const generateStory = async (
     grammarRules = "You may use varied sentence structures and common tenses appropriate for an intermediate learner.";
   }
 
+  const typeDescription = contentType === 'non-fiction' 
+    ? "an engaging non-fiction article or informative story (e.g., about nature, history, science, or daily life)"
+    : "a short, engaging fiction story";
+
   const systemInstruction = `You are an expert English teacher specializing in Graded Readers. 
-  Your task is to write a short, engaging story suitable for a student at Level ${currentLevel}.
+  Your task is to write ${typeDescription} suitable for a student at Level ${currentLevel}.
   
   VOCABULARY RULES:
   1. You generally should only use words from the "Allowed Vocabulary" list provided below.
@@ -116,12 +121,13 @@ export const generateStory = async (
   }
   `;
 
+  const promptType = contentType === 'non-fiction' ? "a non-fiction article" : "a story";
   const prompt = `
   Target Vocabulary (Level ${currentLevel}): ${targetWords.join(', ')}
   
   Allowed Vocabulary (Level 1-${currentLevel}): ${allowedWords.join(', ')}
   
-  Write a story using these constraints and output as JSON.
+  Write ${promptType} using these constraints and output as JSON.
   `;
 
   try {

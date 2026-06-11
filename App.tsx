@@ -56,6 +56,7 @@ const App: React.FC = () => {
 
   // Known Words State (Moved up for dependency access)
   const [showSettings, setShowSettings] = useState(false);
+  const [contentType, setContentType] = useState<'fiction' | 'non-fiction'>('fiction');
     const [vocabSystem, setVocabSystem] = useState<'fry' | 'ngsl'>(() => {
     return (localStorage.getItem('gradedReader_vocabSystem') as 'fry' | 'ngsl') || 'fry';
   });
@@ -242,7 +243,7 @@ const App: React.FC = () => {
     const targetWords = targetWordsSorted.slice(0, 20);
 
     // 5. Call API
-    const result = await generateStory(currentLevel, allowedWords, targetWords);
+    const result = await generateStory(currentLevel, allowedWords, targetWords, contentType);
     
     return result;
   };
@@ -612,30 +613,58 @@ const App: React.FC = () => {
         <div className="max-w-2xl mx-auto mb-12 space-y-4">
           
           
-              {/* Vocab System Toggle */}
-              <div className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <span className="text-sm font-semibold text-slate-700">词汇体系:</span>
-                <div className="flex bg-slate-100 p-1 rounded-lg">
-                  <button
-                    onClick={() => handleToggleVocabSystem('fry')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      vocabSystem === 'fry' 
-                        ? 'bg-white text-brand-600 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    Fry 视觉词 (1000)
-                  </button>
-                  <button
-                    onClick={() => handleToggleVocabSystem('ngsl')}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      vocabSystem === 'ngsl' 
-                        ? 'bg-white text-brand-600 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    NGSL 高频词 (2800)
-                  </button>
+              {/* Settings Group: Content Type & Vocab System */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                  <span className="text-sm font-semibold text-slate-700">内容类型:</span>
+                  <div className="flex bg-slate-100 p-1 rounded-lg w-full sm:w-auto">
+                    <button
+                      onClick={() => setContentType('fiction')}
+                      className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                        contentType === 'fiction' 
+                          ? 'bg-white text-brand-600 shadow-sm' 
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      虚构故事
+                    </button>
+                    <button
+                      onClick={() => setContentType('non-fiction')}
+                      className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                        contentType === 'non-fiction' 
+                          ? 'bg-white text-brand-600 shadow-sm' 
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      非虚构文章
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                  <span className="text-sm font-semibold text-slate-700">词汇体系:</span>
+                  <div className="flex bg-slate-100 p-1 rounded-lg w-full sm:w-auto">
+                    <button
+                      onClick={() => handleToggleVocabSystem('fry')}
+                      className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                        vocabSystem === 'fry' 
+                          ? 'bg-white text-brand-600 shadow-sm' 
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Fry (1000)
+                    </button>
+                    <button
+                      onClick={() => handleToggleVocabSystem('ngsl')}
+                      className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                        vocabSystem === 'ngsl' 
+                          ? 'bg-white text-brand-600 shadow-sm' 
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      NGSL (2800)
+                    </button>
+                  </div>
                 </div>
               </div>
 
