@@ -61,7 +61,7 @@ export const generateStory = async (
   }
 
   const typeDescription = contentType === 'non-fiction' 
-    ? "an engaging non-fiction article or informative story (e.g., about nature, history, science, or daily life)"
+    ? "an engaging non-fiction article or informative piece (e.g., about nature, science, history, humanities, social sciences, daily life, or current news/events)"
     : "a short, engaging fiction story";
 
   const systemInstruction = `You are an expert English teacher specializing in Graded Readers. 

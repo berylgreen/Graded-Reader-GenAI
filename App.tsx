@@ -612,59 +612,154 @@ const App: React.FC = () => {
         {/* Configuration Section */}
         <div className="max-w-2xl mx-auto mb-12 space-y-4">
           
-          
-              {/* Settings Group: Content Type & Vocab System */}
+          {/* Controls Box */}
+          <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-100">
+              <label htmlFor="level-select" className="block text-sm font-semibold text-slate-700 mb-2 uppercase tracking-wide">
+                选择等级
+              </label>
               <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                  <span className="text-sm font-semibold text-slate-700">内容类型:</span>
-                  <div className="flex bg-slate-100 p-1 rounded-lg w-full sm:w-auto">
-                    <button
-                      onClick={() => setContentType('fiction')}
-                      className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                        contentType === 'fiction' 
-                          ? 'bg-white text-brand-600 shadow-sm' 
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      虚构故事
-                    </button>
-                    <button
-                      onClick={() => setContentType('non-fiction')}
-                      className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                        contentType === 'non-fiction' 
-                          ? 'bg-white text-brand-600 shadow-sm' 
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      非虚构文章
-                    </button>
+                <div className="relative flex-grow">
+                  <select
+                    id="level-select"
+                    className="block w-full pl-4 pr-10 py-3 text-base border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-lg rounded-xl shadow-sm border appearance-none bg-white cursor-pointer transition-colors hover:border-brand-300"
+                    value={currentLevel || ''}
+                    onChange={handleDropdownChange}
+                    disabled={appState === AppState.GENERATING || isBatchGenerating}
+                  >
+                    <option value="" disabled>请选择词汇等级...</option>
+                    {vocabGroups.map((group) => {
+                      if (group.level === REVIEW_LEVEL_ID && group.words.length === 0) return null;
+                      
+                      return (
+                        <option key={group.level} value={group.level} className={group.level === REVIEW_LEVEL_ID ? 'font-bold text-orange-600' : ''}>
+                          {group.level === REVIEW_LEVEL_ID ? '★ ' : ''}
+                          Level {group.level === REVIEW_LEVEL_ID ? 'Review' : group.level} 
+                          {group.label ? ` - ${group.label}` : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
                   </div>
                 </div>
 
-                <div className="flex-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                  <span className="text-sm font-semibold text-slate-700">词汇体系:</span>
-                  <div className="flex bg-slate-100 p-1 rounded-lg w-full sm:w-auto">
-                    <button
-                      onClick={() => handleToggleVocabSystem('fry')}
-                      className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                        vocabSystem === 'fry' 
-                          ? 'bg-white text-brand-600 shadow-sm' 
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      Fry (1000)
-                    </button>
-                    <button
-                      onClick={() => handleToggleVocabSystem('ngsl')}
-                      className={`flex-1 px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                        vocabSystem === 'ngsl' 
-                          ? 'bg-white text-brand-600 shadow-sm' 
-                          : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
-                      NGSL (2800)
-                    </button>
-                  </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button
+                    onClick={handleGenerate}
+                    disabled={!currentLevel || appState === AppState.GENERATING || isBatchGenerating}
+                    className={`
+                      px-6 py-3 rounded-xl font-bold text-white shadow-md transition-all duration-200
+                      flex items-center justify-center min-w-[140px] whitespace-nowrap
+                      ${!currentLevel || appState === AppState.GENERATING || isBatchGenerating
+                        ? 'bg-slate-300 cursor-not-allowed transform-none' 
+                        : 'bg-brand-600 hover:bg-brand-700 hover:shadow-lg active:scale-95 active:shadow-sm'
+                      }
+                    `}
+                  >
+                    {appState === AppState.GENERATING && !isBatchGenerating ? (
+                      <div className="flex items-center whitespace-nowrap">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                        <span>正在生成...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="whitespace-nowrap">生成</span>
+                        <svg className="w-5 h-5 ml-2 -mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={handleBatchGenerate}
+                    disabled={!currentLevel || appState === AppState.GENERATING || isBatchGenerating}
+                    className={`
+                      px-4 py-3 rounded-xl font-bold shadow-sm transition-all duration-200
+                      flex items-center justify-center border-2 border-brand-200
+                      ${!currentLevel || appState === AppState.GENERATING || isBatchGenerating
+                        ? 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed' 
+                        : 'bg-white text-brand-600 hover:bg-brand-50 hover:border-brand-300 hover:shadow-md active:scale-95'
+                      }
+                    `}
+                    title="Batch Generate 5 stories & Download ZIP"
+                  >
+                    {isBatchGenerating ? (
+                      <div className="flex items-center text-xs">
+                        <div className="w-3 h-3 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin mr-1" />
+                        Zip...
+                      </div>
+                    ) : (
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              {!currentLevel && (
+                <p className="mt-2 text-sm text-slate-400">请选择一个等级以开始。</p>
+              )}
+              {isBatchGenerating && (
+                 <p className="mt-2 text-xs font-semibold text-brand-600 animate-pulse">{batchProgress}</p>
+              )}
+          </div>
+          
+              {/* Content Type Toggle */}
+              <div className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <span className="text-sm font-semibold text-slate-700">内容类型:</span>
+                <div className="flex bg-slate-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => setContentType('fiction')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      contentType === 'fiction' 
+                        ? 'bg-white text-brand-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    虚构故事
+                  </button>
+                  <button
+                    onClick={() => setContentType('non-fiction')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      contentType === 'non-fiction' 
+                        ? 'bg-white text-brand-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    非虚构文章
+                  </button>
+                </div>
+              </div>
+
+              {/* Vocab System Toggle */}
+              <div className="flex items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <span className="text-sm font-semibold text-slate-700">词汇体系:</span>
+                <div className="flex bg-slate-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => handleToggleVocabSystem('fry')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      vocabSystem === 'fry' 
+                        ? 'bg-white text-brand-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    Fry 视觉词 (1000)
+                  </button>
+                  <button
+                    onClick={() => handleToggleVocabSystem('ngsl')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                      vocabSystem === 'ngsl' 
+                        ? 'bg-white text-brand-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    NGSL 高频词 (2800)
+                  </button>
                 </div>
               </div>
 
@@ -765,102 +860,6 @@ const App: React.FC = () => {
             )}
           </div>
 
-          {/* Controls Box */}
-          <div className="bg-white p-6 rounded-2xl shadow-md border border-slate-100">
-              <label htmlFor="level-select" className="block text-sm font-semibold text-slate-700 mb-2 uppercase tracking-wide">
-                选择等级
-              </label>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="relative flex-grow">
-                  <select
-                    id="level-select"
-                    className="block w-full pl-4 pr-10 py-3 text-base border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 sm:text-lg rounded-xl shadow-sm border appearance-none bg-white cursor-pointer transition-colors hover:border-brand-300"
-                    value={currentLevel || ''}
-                    onChange={handleDropdownChange}
-                    disabled={appState === AppState.GENERATING || isBatchGenerating}
-                  >
-                    <option value="" disabled>请选择词汇等级...</option>
-                    {vocabGroups.map((group) => {
-                      if (group.level === REVIEW_LEVEL_ID && group.words.length === 0) return null;
-                      
-                      return (
-                        <option key={group.level} value={group.level} className={group.level === REVIEW_LEVEL_ID ? 'font-bold text-orange-600' : ''}>
-                          {group.level === REVIEW_LEVEL_ID ? '★ ' : ''}
-                          Level {group.level === REVIEW_LEVEL_ID ? 'Review' : group.level} 
-                          {group.label ? ` - ${group.label}` : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 flex-shrink-0">
-                  <button
-                    onClick={handleGenerate}
-                    disabled={!currentLevel || appState === AppState.GENERATING || isBatchGenerating}
-                    className={`
-                      px-6 py-3 rounded-xl font-bold text-white shadow-md transition-all duration-200
-                      flex items-center justify-center min-w-[140px] whitespace-nowrap
-                      ${!currentLevel || appState === AppState.GENERATING || isBatchGenerating
-                        ? 'bg-slate-300 cursor-not-allowed transform-none' 
-                        : 'bg-brand-600 hover:bg-brand-700 hover:shadow-lg active:scale-95 active:shadow-sm'
-                      }
-                    `}
-                  >
-                    {appState === AppState.GENERATING && !isBatchGenerating ? (
-                      <div className="flex items-center whitespace-nowrap">
-                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                        <span>正在生成...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <span className="whitespace-nowrap">生成</span>
-                        <svg className="w-5 h-5 ml-2 -mr-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={handleBatchGenerate}
-                    disabled={!currentLevel || appState === AppState.GENERATING || isBatchGenerating}
-                    className={`
-                      px-4 py-3 rounded-xl font-bold shadow-sm transition-all duration-200
-                      flex items-center justify-center border-2 border-brand-200
-                      ${!currentLevel || appState === AppState.GENERATING || isBatchGenerating
-                        ? 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed' 
-                        : 'bg-white text-brand-600 hover:bg-brand-50 hover:border-brand-300 hover:shadow-md active:scale-95'
-                      }
-                    `}
-                    title="Batch Generate 5 stories & Download ZIP"
-                  >
-                    {isBatchGenerating ? (
-                      <div className="flex items-center text-xs">
-                        <div className="w-3 h-3 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin mr-1" />
-                        Zip...
-                      </div>
-                    ) : (
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
-              
-              {!currentLevel && (
-                <p className="mt-2 text-sm text-slate-400">请选择一个等级以开始。</p>
-              )}
-              {isBatchGenerating && (
-                 <p className="mt-2 text-xs font-semibold text-brand-600 animate-pulse">{batchProgress}</p>
-              )}
-          </div>
         </div>
 
         {/* Error State */}
