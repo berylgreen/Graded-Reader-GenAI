@@ -62,6 +62,31 @@ function localFilesPlugin() {
             res.statusCode = 404;
             res.end('File Not Found');
           }
+        } else if (req.method === 'GET' && url === '/config') {
+          const configPath = path.resolve(__dirname, 'user_config.json');
+          if (fs.existsSync(configPath)) {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            fs.createReadStream(configPath).pipe(res);
+          } else {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({}));
+          }
+        } else if (req.method === 'POST' && url === '/config') {
+          const configPath = path.resolve(__dirname, 'user_config.json');
+          const writeStream = fs.createWriteStream(configPath);
+          req.pipe(writeStream);
+          req.on('end', () => {
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: true }));
+          });
+          req.on('error', (err: any) => {
+            console.error('Error saving config:', err);
+            res.statusCode = 500;
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          });
         } else {
           next();
         }

@@ -26,43 +26,76 @@ const App: React.FC = () => {
   // --- Global State ---
   const [view, setView] = useState<ViewState>('home');
   
-  // Initialize vocab groups from localStorage or defaults
-  const [vocabGroups, setVocabGroups] = useState<WordGroup[]>(() => {
-    const saved = localStorage.getItem('gradedReader_vocabGroups');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse saved vocab groups", e);
-        return vocabSystem === 'ngsl' ? NGSL_WORD_GROUPS : FRY_WORD_GROUPS;
-      }
-    }
-    return vocabSystem === 'ngsl' ? NGSL_WORD_GROUPS : FRY_WORD_GROUPS;
-  });
+  const [isConfigLoaded, setIsConfigLoaded] = useState(false);
 
-  // Word Usage Statistics State
-  const [wordStats, setWordStats] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem('gradedReader_wordStats');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error("Failed to parse usage stats", e);
-        return {};
-      }
-    }
-    return {};
-  });
-
-  // Known Words State (Moved up for dependency access)
+  // Initialize with defaults, will be overridden by fetch
+  const [vocabGroups, setVocabGroups] = useState<WordGroup[]>(FRY_WORD_GROUPS);
+  const [wordStats, setWordStats] = useState<Record<string, number>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [contentType, setContentType] = useState<'fiction' | 'non-fiction'>('fiction');
-    const [vocabSystem, setVocabSystem] = useState<'fry' | 'ngsl'>(() => {
-    return (localStorage.getItem('gradedReader_vocabSystem') as 'fry' | 'ngsl') || 'fry';
-  });
-
+  const [vocabSystem, setVocabSystem] = useState<'fry' | 'ngsl'>('fry');
   const [manualKnownWords, setManualKnownWords] = useState<string>('');
-  
+  const [schoolGradeId, setSchoolGradeId] = useState<number | null>(null);
+  const [currentLevel, setCurrentLevel] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        const sys = data.vocabSystem || (localStorage.getItem('gradedReader_vocabSystem') as 'fry' | 'ngsl') || 'fry';
+        setVocabSystem(sys);
+        
+        // Always derive vocabGroups from vocabSystem default, ignoring any saved dictionary array
+        setVocabGroups(sys === 'ngsl' ? NGSL_WORD_GROUPS : FRY_WORD_GROUPS);
+
+        const savedStats = localStorage.getItem('gradedReader_wordStats');
+        if (savedStats) {
+           try { setWordStats(JSON.parse(savedStats)); } catch (e) { setWordStats({}); }
+        }
+
+        if (data.contentType) setContentType(data.contentType);
+        if (data.manualKnownWords !== undefined) setManualKnownWords(data.manualKnownWords);
+        
+        const savedSchoolGradeId = data.schoolGradeId !== undefined ? data.schoolGradeId : (localStorage.getItem('gradedReader_schoolGradeId') ? parseInt(localStorage.getItem('gradedReader_schoolGradeId')!) : null);
+        if (savedSchoolGradeId !== null) setSchoolGradeId(savedSchoolGradeId);
+        
+        const savedLevel = data.currentLevel || (localStorage.getItem('gradedReader_currentLevel') ? parseInt(localStorage.getItem('gradedReader_currentLevel')!) : null);
+        if (savedLevel) setCurrentLevel(savedLevel);
+      })
+      .catch(err => console.error("Failed to load config:", err))
+      .finally(() => setIsConfigLoaded(true));
+  }, []);
+
+  // Persist state to backend and local storage when changed
+  useEffect(() => {
+    if (!isConfigLoaded) return;
+
+    localStorage.setItem('gradedReader_wordStats', JSON.stringify(wordStats));
+    localStorage.setItem('gradedReader_vocabSystem', vocabSystem);
+    if (currentLevel !== null) {
+      localStorage.setItem('gradedReader_currentLevel', currentLevel.toString());
+    } else {
+      localStorage.removeItem('gradedReader_currentLevel');
+    }
+    if (schoolGradeId !== null) {
+      localStorage.setItem('gradedReader_schoolGradeId', schoolGradeId.toString());
+    } else {
+      localStorage.removeItem('gradedReader_schoolGradeId');
+    }
+
+    fetch('/api/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currentLevel,
+        contentType,
+        vocabSystem,
+        manualKnownWords,
+        schoolGradeId
+      }, null, 2)
+    }).catch(err => console.error("Failed to save config to backend:", err));
+  }, [currentLevel, wordStats, contentType, vocabSystem, manualKnownWords, schoolGradeId, isConfigLoaded]);
+
   const resultsRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -81,18 +114,24 @@ const App: React.FC = () => {
       }
     });
 
+    if (schoolGradeId) {
+      SCHOOL_GROUPS.forEach(group => {
+        if (group.level <= schoolGradeId) {
+          group.words.forEach(word => {
+            let clean = word.trim().toLowerCase();
+            if (clean) {
+              if (vocabSystem === 'ngsl') {
+                clean = NGSL_FAMILIES[clean] || clean;
+              }
+              set.add(clean);
+            }
+          });
+        }
+      });
+    }
+
     return set;
-  }, [manualKnownWords, vocabSystem]);
-
-  // Persist vocab groups when changed
-  useEffect(() => {
-    localStorage.setItem('gradedReader_vocabGroups', JSON.stringify(vocabGroups));
-  }, [vocabGroups]);
-
-  // Persist stats when changed
-  useEffect(() => {
-    localStorage.setItem('gradedReader_wordStats', JSON.stringify(wordStats));
-  }, [wordStats]);
+  }, [manualKnownWords, vocabSystem, schoolGradeId]);
 
   // --- Dynamic Review Level Logic ---
   // Whenever stats or known words change, check if we need to update the "Review Level" (999)
@@ -139,7 +178,6 @@ const App: React.FC = () => {
   }, [wordStats, knownWordsSet]); // Run when stats or known words update
 
   // --- Generator State ---
-  const [currentLevel, setCurrentLevel] = useState<number | null>(null);
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [story, setStory] = useState<GeneratedStory | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -178,36 +216,9 @@ const App: React.FC = () => {
     // The Review Level will be updated to empty list by the useEffect logic
   };
 
-  const handleImportSchoolWords = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSchoolGradeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedId = Number(e.target.value);
-    if (!selectedId) return;
-
-    // Get all groups up to and including the selected semester
-    const wordsToAdd: string[] = [];
-    SCHOOL_GROUPS.forEach(group => {
-      if (group.level <= selectedId) {
-        wordsToAdd.push(...group.words);
-      }
-    });
-
-    // Remove duplicates
-    const uniqueWords = Array.from(new Set(wordsToAdd));
-
-    setManualKnownWords(prev => {
-      const cleanPrev = prev.trim();
-      if (cleanPrev.length === 0) return uniqueWords.join(', ');
-      
-      const prevSet = new Set(cleanPrev.split(/[,，\n]/).map(w => w.trim().toLowerCase()));
-      const newWords = uniqueWords.filter(w => !prevSet.has(w.toLowerCase()));
-      
-      if (newWords.length === 0) return prev;
-
-      const separator = /[,,，\n]$/.test(cleanPrev) ? '' : ', ';
-      return cleanPrev + separator + newWords.join(', ');
-    });
-    
-    // Reset dropdown
-    e.target.value = "";
+    setSchoolGradeId(selectedId || null);
   };
 
   // Refactored to accept stats as argument for consistent batch processing
@@ -449,9 +460,22 @@ const App: React.FC = () => {
     reader.readAsBinaryString(file);
   };
 
-  const handleResetCache = () => {
+  const handleResetCache = async () => {
     if (window.confirm("确定要清除本地缓存并重置词汇数据吗？此操作将刷新页面。")) {
       localStorage.removeItem('gradedReader_vocabGroups');
+      localStorage.removeItem('gradedReader_wordStats');
+      localStorage.removeItem('gradedReader_vocabSystem');
+      localStorage.removeItem('gradedReader_currentLevel');
+      localStorage.removeItem('gradedReader_schoolGradeId');
+      try {
+        await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+      } catch (e) {
+        console.error("Failed to reset config on server", e);
+      }
       window.location.reload();
     }
   };
@@ -800,9 +824,9 @@ const App: React.FC = () => {
                    {/* School Grade Import */}
                    <div className="relative">
                       <select 
-                        onChange={handleImportSchoolWords}
+                        onChange={handleSchoolGradeChange}
                         className="appearance-none bg-white border border-slate-300 text-slate-700 py-1.5 px-3 pr-8 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer hover:border-brand-300"
-                        defaultValue=""
+                        value={schoolGradeId || ""}
                       >
                         <option value="" disabled>按学段导入...</option>
                         {SCHOOL_GROUPS.map(group => (
@@ -842,6 +866,24 @@ const App: React.FC = () => {
                       重置词汇数据
                    </button>
                 </div>
+
+                {/* Excluded School Words Details */}
+                {schoolGradeId && (() => {
+                  const words: string[] = [];
+                  SCHOOL_GROUPS.forEach(g => {
+                    if (g.level <= schoolGradeId) words.push(...g.words);
+                  });
+                  return (
+                    <details className="mt-2 text-xs bg-slate-50 border border-slate-200 rounded-lg overflow-hidden">
+                      <summary className="px-4 py-2 cursor-pointer font-semibold text-slate-600 outline-none hover:bg-slate-100 transition-colors">
+                        已自动排除按学段导入的 {words.length} 个单词（点击展开查看）
+                      </summary>
+                      <div className="p-4 border-t border-slate-200 max-h-48 overflow-y-auto custom-scrollbar leading-relaxed text-slate-500 font-mono break-words bg-white">
+                        {words.join(', ')}
+                      </div>
+                    </details>
+                  );
+                })()}
 
                 {/* Manual Input */}
                 <div>
