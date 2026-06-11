@@ -51,6 +51,9 @@ stop() {
 
     if ps -p "$PID" > /dev/null; then
         echo "正在停止系统 (PID $PID)..."
+        
+        # 停止该进程的所有子进程（解决 npm run 无法彻底关闭 vite 的问题）
+        pkill -P "$PID" > /dev/null 2>&1
         kill "$PID"
         
         # 等待进程完全退出
