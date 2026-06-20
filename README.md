@@ -67,6 +67,17 @@ View your app in AI Studio: https://ai.studio/apps/drive/1JVOzrbJmyCOomzvQSU0oTl
    npm run dev
    ```
 
+## 用户配置 (User Configuration)
+
+应用程序的用户偏好设置会自动保存在根目录下的 `user_config.json` 文件中。您可以在前端页面的 "Configure Levels" 面板进行相关配置，系统会通过本地 API 将您的更改持久化保存。
+
+主要配置项说明：
+- **`currentLevel` (当前等级)**：控制生成文章的词汇和语法难度。
+- **`contentType` (内容类型)**：控制生成文章的体裁。目前支持 `"fiction"`（小说/虚构类故事）和 `"non-fiction"`（非虚构类/科普纪实文章）。
+- **`vocabSystem` (词汇表系统)**：使用的对标词汇标准（如 `"fry"` 词表）。
+- **`schoolGradeId` (学校年级)**：匹配对应年级的阅读水平。
+- **`manualKnownWords` (手动已知词汇)**：用户可手动补充已掌握的词汇，系统在生成和高亮文章时会将其作为已掌握词汇处理。
+
 ---
 
 *This contains everything you need to run your app locally.*
